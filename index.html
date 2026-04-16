@@ -3,173 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scribd Central de Downloads</title>
+    <title>Scribd Fast Downloader</title>
     <style>
         :root {
             --primary: #1a73e8;
             --success: #1e8e3e;
-            --bg: #f1f3f4;
+            --bg: #f8fafc;
         }
 
         body {
             margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             background: var(--bg);
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
+            align-items: center;
         }
 
-        /* Topo Azul */
         .header {
+            width: 100%;
             background: var(--primary);
             color: white;
-            padding: 15px;
+            padding: 20px;
             text-align: center;
-            font-size: 1.2rem;
             font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-size: 20px;
         }
 
-        .container {
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        /* Instruções */
-        .instructions {
-            background: #fff8e1;
-            border-left: 4px solid #ffc107;
-            padding: 15px;
-            font-size: 14px;
-            border-radius: 4px;
-            line-height: 1.4;
-        }
-
-        /* Estilo dos Botões e Input */
-        .input-box {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #dfe1e5;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
+        .card {
+            background: white;
+            width: 90%;
+            max-width: 450px;
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
 
         .btn {
             width: 100%;
-            padding: 15px;
+            padding: 16px;
             border: none;
             border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
             font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            transition: 0.2s;
         }
 
-        .btn-scribd { background: #1e1e1e; color: white; } /* Botão para ir ao site */
-        .btn-paste { background: #e8f0fe; color: var(--primary); }
-        .btn-download { background: var(--success); color: white; }
+        .btn-scribd { background: #000; color: white; }
+        .btn-paste { background: #e8f0fe; color: var(--primary); border: 1px solid #d2e3fc; }
+        .btn-go { background: var(--success); color: white; margin-top: 10px; }
 
-        .btn:active { transform: scale(0.98); }
-
-        /* Pop-up de aviso (Toast) */
-        #toast {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #333;
-            color: white;
-            padding: 12px 25px;
-            border-radius: 25px;
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            box-sizing: border-box;
             font-size: 14px;
-            z-index: 1000;
+            margin-top: 5px;
+        }
+
+        .footer-info {
+            font-size: 12px;
+            color: #64748b;
+            text-align: center;
+            padding: 20px;
         }
     </style>
 </head>
 <body>
 
-<div class="header">Assistente Scribd</div>
+<div class="header">Assistente de Extração</div>
 
-<div class="container">
-    <div class="instructions">
-        <strong>Passo a passo:</strong><br>
-        1. Clique no botão preto para abrir o Scribd.<br>
-        2. Copie o link do documento que deseja.<br>
-        3. Volte aqui e clique em <b>"Colar Link"</b>.<br>
-        4. Clique em <b>"Gerar Downloads"</b>.
-    </div>
-
+<div class="card">
     <button class="btn btn-scribd" onclick="window.open('https://www.scribd.com', '_blank')">
-        🌐 1. Abrir Site Scribd
+        1. Abrir Scribd
     </button>
 
-    <label style="font-size: 12px; color: #666; margin-bottom: -10px;">LINK DO MATERIAL:</label>
-    <input type="text" id="scribdUrl" class="input-box" placeholder="Cole o link aqui...">
-    
-    <button class="btn btn-paste" onclick="pasteLink()">
-        📋 2. Colar Link Copiado
+    <label style="font-size: 12px; font-weight: bold; color: #475569;">LINK COPIADO:</label>
+    <input type="text" id="urlInput" placeholder="https://www.scribd.com/doc/...">
+
+    <button class="btn btn-paste" onclick="handlePaste()" style="margin-top: 10px;">
+        2. Colar Link
     </button>
 
-    <button class="btn btn-download" onclick="startMultidownload()">
-        🚀 3. Gerar Downloads (4 Sites)
+    <button class="btn btn-go" onclick="runDownloaders()">
+        3. Gerar Links Diretos
     </button>
 </div>
 
-<div id="toast">Link colado!</div>
+<div class="footer-info">
+    O link será injetado automaticamente nos sistemas de extração.
+</div>
 
 <script>
-    const input = document.getElementById('scribdUrl');
-    const toast = document.getElementById('toast');
-
-    function showToast(msg) {
-        toast.innerText = msg;
-        toast.style.display = 'block';
-        setTimeout(() => { toast.style.display = 'none'; }, 2500);
-    }
-
-    async function pasteLink() {
+    async function handlePaste() {
         try {
             const text = await navigator.clipboard.readText();
-            if(text.includes('scribd.com')) {
-                input.value = text;
-                showToast("✅ Link capturado!");
+            if (text.includes("scribd.com")) {
+                document.getElementById('urlInput').value = text;
             } else {
-                showToast("❌ Isso não parece um link do Scribd.");
+                alert("O link na área de transferência não é do Scribd.");
             }
-        } catch (err) {
-            showToast("⚠️ Dê permissão para colar.");
+        } catch (e) {
+            alert("Clique no campo e cole manualmente.");
         }
     }
 
-    function startMultidownload() {
-        const url = input.value.trim();
-        if (!url) {
-            alert("Primeiro cole o link do documento.");
-            return;
-        }
+    function runDownloaders() {
+        const rawUrl = document.getElementById('urlInput').value.trim();
+        if (!rawUrl) return alert("Cole um link primeiro!");
 
-        const sites = [
-            `https://docdownloader.com/?s=${encodeURIComponent(url)}`,
-            `https://dlscrib.com/`,
-            `https://scribd.vdownloaders.com/`,
-            `https://scrdownloader.com/`
+        const encodedUrl = encodeURIComponent(rawUrl);
+
+        // Formatação de URLs para abrir já com o link "injetado"
+        const targets = [
+            `https://docdownloader.com/?s=${encodedUrl}`,
+            `https://dlscrib.com/?url=${encodedUrl}`,
+            `https://scribd.vdownloaders.com/?url=${encodedUrl}`,
+            `https://scrdownloader.com/` // Este exige colagem manual por segurança do site
         ];
 
-        showToast("Abrindo abas de download...");
-        sites.forEach((s, i) => {
-            setTimeout(() => window.open(s, '_blank'), i * 500);
+        targets.forEach((link, i) => {
+            setTimeout(() => {
+                window.open(link, '_blank');
+            }, i * 600);
         });
     }
 </script>
